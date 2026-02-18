@@ -1,52 +1,64 @@
-export default function Home() {
+import Link from "next/link";
+
+export default function HomePage() {
   return (
     <main className="neo-bg min-h-screen text-white">
-      {/* Top bar */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <div className="text-xl font-extrabold tracking-tight">
-          <span className="text-white">NEO</span>{" "}
-          <span className="text-blue-500">HUB</span>
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-xl bg-blue-600/90 flex items-center justify-center font-bold">
+            N
+          </div>
+          <div className="text-lg font-extrabold tracking-wide">
+            NEO <span className="text-blue-500 italic">HUB</span>
+          </div>
         </div>
 
-        <nav className="flex items-center gap-6">
-          <button className="text-xs tracking-[0.25em] text-white/70 hover:text-white transition">
+        <nav className="flex items-center gap-4">
+          <Link href="/login" className="text-white/80 hover:text-white transition">
             ENTRAR
-          </button>
-          <button className="rounded-full bg-white px-5 py-2 text-xs font-semibold tracking-[0.25em] text-black hover:bg-white/90 transition">
+          </Link>
+
+          <Link
+            href="/cadastrar"
+            className="rounded-full bg-white px-6 py-2 text-sm font-semibold text-black hover:bg-white/90 transition"
+          >
             CADASTRAR
-          </button>
+          </Link>
         </nav>
       </header>
 
-      {/* Hero */}
-      <section className="mx-auto flex max-w-6xl flex-col items-center px-6 pt-10 text-center">
-        <div className="mb-8">
-          <span className="rounded-full border border-blue-500/20 bg-blue-500/10 px-5 py-2 text-[11px] tracking-[0.35em] text-blue-300">
+      <section className="mx-auto max-w-6xl px-6 py-16">
+        <div className="max-w-3xl">
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-xs tracking-[0.2em] text-white/80">
             • SISTEMA DE EVOLUÇÃO ACADÊMICA
-          </span>
-        </div>
+          </div>
 
-        <h1
-          className="text-5xl md:text-7xl lg:text-8xl font-extrabold leading-[0.9]"
-          style={{ textShadow: "0 14px 50px rgba(0,0,0,.45)" }}
-        >
-          A EVOLUÇÃO É <br />
-          ORIENTADA<span className="text-blue-500">.</span>
-        </h1>
+          <h1 className="mt-6 text-5xl font-extrabold leading-[1.02] md:text-7xl">
+            A EVOLUÇÃO É <br />
+            ORIENTADA<span className="text-blue-500">.</span>
+          </h1>
 
-        <p className="mt-8 max-w-2xl text-base md:text-lg text-white/60">
-          O HUB definitivo onde a demanda intelectual encontra a maestria acadêmica.
-          <br />
-          Conectamos desafios reais a soluções de alto nível.
-        </p>
+          <p className="mt-6 max-w-2xl text-white/70 md:text-lg">
+            O HUB definitivo onde a demanda intelectual encontra a maestria acadêmica.
+            Conectamos desafios reais a soluções de alto nível.
+          </p>
 
-        <div className="mt-10 flex gap-4">
-          <button className="rounded-xl bg-blue-600 px-8 py-3 font-semibold hover:bg-blue-700 transition shadow-[0_10px_30px_rgba(37,99,235,0.35)]">
-            Entrar
-          </button>
-          <button className="rounded-xl border border-white/20 px-8 py-3 font-semibold hover:bg-white/10 transition">
-            Cadastrar
-          </button>
+          {/* BOTÕES CLICÁVEIS (Link) */}
+          <div className="mt-10 flex gap-4">
+            <Link
+              href="/login"
+              className="rounded-xl bg-blue-600 px-8 py-3 font-semibold hover:bg-blue-700 transition shadow-lg"
+            >
+              Entrar
+            </Link>
+
+            <Link
+              href="/cadastrar"
+              className="rounded-xl border border-white/20 px-8 py-3 font-semibold hover:bg-white/10 transition"
+            >
+              Cadastrar
+            </Link>
+          </div>
         </div>
       </section>
     </main>
