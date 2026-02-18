@@ -1,25 +1,49 @@
-﻿import { createServerClient } from "@supabase/ssr";
+﻿import "server-only";
+
 import { cookies } from "next/headers";
+import { createServerClient } from "@supabase/ssr";
 
-export async function createServerSupabase() {
-  const cookieStore = await cookies();
+function getEnv(name: string) {
+  const v = process.env[name];
+  if (!v) throw new Error(`Missing env: ${name}`);
+  return v;
+}
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-  if (!url || !key) throw new Error("Missing Supabase env vars");
+/**
+ * Cliente Supabase para Server Components / Route Handlers (App Router)
+ */
+export function createServerSupabase() {
+  const url = getEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const anon = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
 
-  return createServerClient(url, key, {
+  const cookieStore = cookies() as any;
+
+  return createServerClient(url, anon, {
     cookies: {
       getAll() {
-        return cookieStore.getAll();
+        // Next pode variar a API de cookies entre versões
+        if (typeof cookieStore.getAll === "function") return cookieStore.getAll();
+        return [];
       },
       setAll(cookiesToSet) {
+        // Em Server Components, set pode falhar em algumas situações (ex: render)
+        // Mas para login/logout via Server Action geralmente funciona.
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
-            cookieStore.set(name, value, options);
+            if (typeof cookieStore.set === "function") cookieStore.set(name, value, options);
           });
-        } catch {}
+        } catch {
+          // ignore
+        }
       },
     },
   });
+}
+
+/**
+ * Alias para compatibilidade com imports antigos:
+ * import { createClient } from "@/utils/supabase/server"
+ */
+export function createClient() {
+  return createServerSupabase();
 }
