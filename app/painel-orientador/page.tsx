@@ -1,80 +1,30 @@
-﻿import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+﻿import { redirect } from "next/navigation";
+import { createServerSupabase } from "@/utils/supabase/server";
+import { signoutAction } from "@/app/actions";
 
-export const dynamic = "force-dynamic";
-
-type SearchParams = {
-  error?: string;
-  next?: string;
-};
-
-export default async function PainelOrientadorPage({
-  searchParams,
-}: {
-  searchParams: Promise<SearchParams>;
-}) {
-  const sp = await searchParams;
-  const error = sp?.error ?? "";
-
-  const supabase = await createClient();
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  // Se não estiver logado  manda pro login respeitando next
-  if (!user) redirect(`/login?next=${encodeURIComponent("/painel-orientador")}`);
-
-  // Garante que é orientador
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (profile?.role !== "orientador") {
-    redirect(`/painel?error=${encodeURIComponent("nao_autorizado")}`);
-  }
+export default async function PainelOrientador() {
+  const supabase = await createServerSupabase();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/entrar?next=/painel-orientador");
 
   return (
-    <main style={{ padding: 24 }}>
-      <header style={{ display: "flex", gap: 12, alignItems: "center" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 800, margin: 0 }}>
-          Painel do Orientador
-        </h1>
-
-        <div style={{ marginLeft: "auto", display: "flex", gap: 10 }}>
-          <Link href="/lancar-missao">Ver solicitações</Link>
-          <Link href="/sair">Sair</Link>
+    <section className="mx-auto mt-8 max-w-3xl">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">Painel do Orientador</h1>
+            <p className="mt-2 text-white/70">Logado como: <span className="text-white">{user.email}</span></p>
+            <p className="mt-3 text-white/60 text-sm">
+              Hoje: só acesso e interface. Próximos dias: solicitações + aceitar + chat + pagamento.
+            </p>
+          </div>
+          <form action={signoutAction}>
+            <button className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition">
+              Sair
+            </button>
+          </form>
         </div>
-      </header>
-
-      {error ? (
-        <div
-          style={{
-            marginTop: 14,
-            padding: 12,
-            borderRadius: 12,
-            border: "1px solid #f33",
-            color: "#ff8a8a",
-            maxWidth: 520,
-          }}
-        >
-          Erro: {error}
-        </div>
-      ) : null}
-
-      <div style={{ marginTop: 18, opacity: 0.9 }}>
-        Logado como: <b>{user.email}</b>
       </div>
-
-      <section style={{ marginTop: 24, maxWidth: 900 }}>
-        <p style={{ opacity: 0.9 }}>
-          Aqui vai entrar a lista de solicitações para aceitar/negociar e o chat
-          (próximo passo).
-        </p>
-      </section>
-    </main>
+    </section>
   );
 }

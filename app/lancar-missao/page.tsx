@@ -1,46 +1,49 @@
-﻿import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
-import { criarMissao } from "@/app/actions";
+﻿import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createServerSupabase } from "@/utils/supabase/server";
+import { criarSolicitacao } from "@/app/actions";
 
 export default async function LancarMissaoPage({
   searchParams,
 }: {
   searchParams?: { error?: string };
 }) {
-  const supabase = await createClient();
+  const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/lancar-missao");
-
-  const error = searchParams?.error;
+  if (!user) redirect("/entrar?next=/lancar-missao");
 
   return (
-    <main style={{ padding: 24, maxWidth: 720, margin: "0 auto" }}>
-      <h1 style={{ fontSize: 28, fontWeight: 800 }}>Lançar missão</h1>
-      <p style={{ opacity: 0.8, marginTop: 6 }}>
-        Crie uma solicitação para um orientador aceitar.
-      </p>
+    <section className="mx-auto mt-8 max-w-3xl">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">Lançar missão</h1>
+            <p className="mt-2 text-white/70">Crie uma solicitação para um orientador.</p>
+          </div>
 
-      {error ? (
-        <div style={{ marginTop: 14, padding: 12, borderRadius: 12, border: "1px solid #f33" }}>
-          Erro ao enviar. Tente novamente.
+          <Link href="/painel" className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition">
+            Voltar
+          </Link>
         </div>
-      ) : null}
 
-      <form action={criarMissao} style={{ marginTop: 16, display: "grid", gap: 12 }}>
-        <label style={{ display: "grid", gap: 6 }}>
-          Título
-          <input name="titulo" placeholder="Ex: Lista de exercícios de cálculo" style={{ padding: 12, borderRadius: 12 }} />
-        </label>
+        {searchParams?.error ? (
+          <div className="mt-5 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+            {searchParams.error}
+          </div>
+        ) : null}
 
-        <label style={{ display: "grid", gap: 6 }}>
-          Descrição (opcional)
-          <textarea name="descricao" placeholder="Explique o que precisa, prazo, detalhes..." rows={5} style={{ padding: 12, borderRadius: 12 }} />
-        </label>
-
-        <button type="submit" style={{ padding: 12, borderRadius: 12, fontWeight: 800 }}>
-          Enviar
-        </button>
-      </form>
-    </main>
+        <form action={criarSolicitacao} className="mt-8 space-y-3">
+          <input
+            name="titulo"
+            placeholder="Título da solicitação"
+            required
+            className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-white placeholder:text-white/40 outline-none"
+          />
+          <button className="h-12 w-full rounded-xl bg-blue-600 font-semibold hover:bg-blue-500 transition">
+            Enviar
+          </button>
+        </form>
+      </div>
+    </section>
   );
 }

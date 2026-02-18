@@ -1,31 +1,25 @@
 ﻿import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function createClient() {
+export async function createServerSupabase() {
   const cookieStore = await cookies();
 
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          // Next pode mudar a API; aqui fica resiliente.
-          const all = (cookieStore as any).getAll?.();
-          if (Array.isArray(all)) return all;
-          return [];
-        },
-        setAll(cookiesToSet) {
-          try {
-            for (const { name, value, options } of cookiesToSet) {
-              (cookieStore as any).set?.(name, value, options);
-            }
-          } catch {
-            // Em alguns contexts (ex: Server Components) set pode ser bloqueado.
-            // A autenticação ainda funciona porque o Supabase lida com refresh via requests seguintes.
-          }
-        },
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+  if (!url || !key) throw new Error("Missing Supabase env vars");
+
+  return createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return cookieStore.getAll();
       },
-    }
-  );
+      setAll(cookiesToSet) {
+        try {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        } catch {}
+      },
+    },
+  });
 }

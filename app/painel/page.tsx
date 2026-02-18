@@ -1,57 +1,48 @@
 ﻿import Link from "next/link";
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
-import { signout } from "@/app/actions";
+import { createServerSupabase } from "@/utils/supabase/server";
+import { signoutAction } from "@/app/actions";
 
 export default async function PainelAluno() {
-  const supabase = await createClient();
+  const supabase = await createServerSupabase();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login?next=/painel");
-
-  const { data: minhas } = await supabase
-    .from("solicitacoes")
-    .select("id,titulo,descricao,status,created_at,orientador_id")
-    .order("created_at", { ascending: false });
+  if (!user) redirect("/entrar?next=/painel");
 
   return (
-    <main style={{ padding: 24, maxWidth: 960, margin: "0 auto" }}>
-      <header style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-        <div>
-          <h1 style={{ fontSize: 28, fontWeight: 800 }}>Painel do Aluno</h1>
-          <p style={{ opacity: 0.8 }}>Logado como: {user.email}</p>
+    <section className="mx-auto mt-8 max-w-3xl">
+      <div className="rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
+        <div className="flex items-start justify-between gap-6">
+          <div>
+            <h1 className="text-3xl font-extrabold tracking-tight">Painel do Aluno</h1>
+            <p className="mt-2 text-white/70">Logado como: <span className="text-white">{user.email}</span></p>
+          </div>
+          <form action={signoutAction}>
+            <button className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm font-semibold hover:bg-white/10 transition">
+              Sair
+            </button>
+          </form>
         </div>
 
-        <form action={signout}>
-          <button style={{ padding: "10px 14px", borderRadius: 10 }}>Sair</button>
-        </form>
-      </header>
+        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+          <Link
+            href="/lancar-missao"
+            className="rounded-2xl border border-white/10 bg-black/25 p-5 hover:bg-black/35 transition"
+          >
+            <div className="text-lg font-semibold">Lançar missão</div>
+            <div className="mt-1 text-sm text-white/60">Criar uma solicitação.</div>
+            <div className="mt-4 inline-flex rounded-full bg-blue-600 px-4 py-2 text-sm font-semibold">Abrir</div>
+          </Link>
 
-      <div style={{ marginTop: 16, display: "flex", gap: 12 }}>
-        <Link href="/lancar-missao" style={{ padding: "10px 14px", borderRadius: 10, border: "1px solid #333" }}>
-          Lançar missão
-        </Link>
+          <Link
+            href="/painel-orientador"
+            className="rounded-2xl border border-white/10 bg-black/25 p-5 hover:bg-black/35 transition"
+          >
+            <div className="text-lg font-semibold">Painel do orientador</div>
+            <div className="mt-1 text-sm text-white/60">Acesso para orientadores.</div>
+            <div className="mt-4 inline-flex rounded-full bg-white/10 px-4 py-2 text-sm font-semibold">Abrir</div>
+          </Link>
+        </div>
       </div>
-
-      <section style={{ marginTop: 20 }}>
-        <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 10 }}>Minhas missões</h2>
-
-        <div style={{ display: "grid", gap: 12 }}>
-          {(minhas || []).map((m) => (
-            <div key={m.id} style={{ border: "1px solid #333", borderRadius: 14, padding: 14 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", gap: 10 }}>
-                <strong>{m.titulo}</strong>
-                <span>{m.status}</span>
-              </div>
-              {m.descricao ? <p style={{ marginTop: 8, opacity: 0.85 }}>{m.descricao}</p> : null}
-              <p style={{ marginTop: 8, opacity: 0.7, fontSize: 12 }}>
-                {m.orientador_id ? " Orientador aceitou" : " Aguardando orientador"}
-              </p>
-            </div>
-          ))}
-
-          {!minhas?.length ? <p style={{ opacity: 0.8 }}>Você ainda não lançou nenhuma missão.</p> : null}
-        </div>
-      </section>
-    </main>
+    </section>
   );
 }

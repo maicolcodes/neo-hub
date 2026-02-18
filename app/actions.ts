@@ -1,99 +1,61 @@
 ﻿"use server";
 
 import { redirect } from "next/navigation";
-import { createClient } from "@/utils/supabase/server";
+import { createServerSupabase } from "@/utils/supabase/server";
 
-// LOGIN
-export async function login(formData: FormData) {
-  const supabase = await createClient();
-
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
+function safeNext(formData: FormData) {
   const next = String(formData.get("next") || "");
+  if (!next) return null;
+  if (!next.startsWith("/")) return null;
+  if (next.startsWith("//")) return null;
+  if (next.startsWith("/entrar")) return null;
+  return next;
+}
+
+export async function login(formData: FormData) {
+  const supabase = await createServerSupabase();
+  const email = String(formData.get("email") || "").trim();
+  const password = String(formData.get("password") || "");
+  const next = safeNext(formData) || "/painel";
 
   const { error } = await supabase.auth.signInWithPassword({ email, password });
-  if (error) return redirect("/login?error=invalid");
+  if (error) redirect(`/entrar?error=${encodeURIComponent("Credenciais inválidas")}&next=${encodeURIComponent(next)}`);
 
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return redirect("/login?error=invalid");
-
-  // garante profile (caso não exista)
-  await supabase.from("profiles").upsert({ id: user.id }, { onConflict: "id" });
-
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role")
-    .eq("id", user.id)
-    .single();
-
-  if (next) return redirect(next);
-
-  if (profile?.role === "orientador") return redirect("/painel-orientador");
-  return redirect("/painel");
+  redirect(next);
 }
 
-// CADASTRO
 export async function signup(formData: FormData) {
-  const supabase = await createClient();
+  const supabase = await createServerSupabase();
+  const email = String(formData.get("email") || "").trim();
+  const password = String(formData.get("password") || "");
+  const next = safeNext(formData) || "/painel";
 
-  const email = String(formData.get("email"));
-  const password = String(formData.get("password"));
+  const { error } = await supabase.auth.signUp({ email, password });
+  if (error) redirect(`/cadastrar?error=${encodeURIComponent(error.message)}&next=${encodeURIComponent(next)}`);
 
-  const { data, error } = await supabase.auth.signUp({ email, password });
-  if (error) return redirect("/cadastrar?error=signup");
-
-  if (data.user) {
-    await supabase.from("profiles").upsert({ id: data.user.id, role: "aluno" }, { onConflict: "id" });
-  }
-
-  return redirect("/painel");
+  redirect(next);
 }
 
-// LOGOUT
-export async function signout() {
-  const supabase = await createClient();
+export async function signoutAction() {
+  const supabase = await createServerSupabase();
   await supabase.auth.signOut();
-  return redirect("/login");
+  redirect("/entrar");
 }
 
-// ALUNO: criar missão
-export async function criarMissao(formData: FormData) {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return redirect("/login?next=/lancar-missao");
+export async function criarSolicitacao(formData: FormData) {
+  const supabase = await createServerSupabase();
 
   const titulo = String(formData.get("titulo") || "").trim();
-  const descricao = String(formData.get("descricao") || "").trim();
+  if (!titulo) redirect("/lancar-missao?error=" + encodeURIComponent("Informe um título."));
 
-  if (!titulo) return redirect("/lancar-missao?error=1");
-
-  const { error } = await supabase.from("solicitacoes").insert({
-    user_id: user.id,
-    titulo,
-    descricao: descricao || null,
-    status: "aberta",
-  });
-
-  if (error) return redirect("/lancar-missao?error=2");
-  return redirect("/painel");
-}
-
-// ORIENTADOR: aceitar missão
-export async function aceitarMissao(formData: FormData) {
-  const id = String(formData.get("id") || "");
-  if (!id) return redirect("/painel-orientador");
-
-  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return redirect("/login?next=/painel-orientador");
+  if (!user) redirect("/entrar?next=/lancar-missao");
 
   const { error } = await supabase
     .from("solicitacoes")
-    .update({ orientador_id: user.id, status: "em_andamento" })
-    .eq("id", id)
-    .is("orientador_id", null)
-    .eq("status", "aberta");
+    .insert({ user_id: user.id, titulo, status: "aberta" });
 
-  if (error) return redirect("/painel-orientador?error=1");
-  return redirect("/painel-orientador");
+  if (error) redirect("/lancar-missao?error=" + encodeURIComponent(error.message));
+
+  redirect("/painel");
 }
