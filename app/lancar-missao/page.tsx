@@ -4,7 +4,7 @@ export const revalidate = 0;
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/utils/supabase/server";
-import { criarMissao } from "@/app/actions";
+import { criarMissaoAction } from '@/app/actions';
 
 export default async function LancarMissaoPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const sp = await searchParams;
@@ -31,7 +31,7 @@ export default async function LancarMissaoPage({ searchParams }: { searchParams:
         </header>
 
         <div className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-6">
-          <form action={criarMissao} className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <form action={criarMissaoAction} className="flex flex-col gap-4 sm:flex-row sm:items-center">
             <input
               name="titulo"
               className="flex-1 rounded-xl bg-black/30 border border-white/10 px-4 py-3 outline-none"
@@ -51,3 +51,4 @@ export default async function LancarMissaoPage({ searchParams }: { searchParams:
     </main>
   );
 }
+
