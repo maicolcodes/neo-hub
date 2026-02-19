@@ -1,55 +1,69 @@
-﻿export const dynamic = "force-dynamic";
-export const revalidate = 0;
-
-import Link from "next/link";
+﻿import Link from "next/link";
 import { loginAction } from "@/app/actions";
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ error?: string; next?: string }> }) {
+export const dynamic = "force-dynamic";
+
+type SP = { error?: string; next?: string };
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
   const sp = await searchParams;
-  const error = sp?.error ?? "";
-  const next = sp?.next ?? "";
+  const errorMsg = sp?.error ? decodeURIComponent(sp.error) : null;
+  const next = sp?.next ? sp.next : "";
 
   return (
-    <main className="min-h-screen neo-bg text-white flex items-center justify-center p-6">
-      <div className="w-full max-w-md rounded-2xl border border-white/10 bg-white/5 p-6 shadow-[0_30px_120px_rgba(0,0,0,.55)]">
-        <h1 className="text-3xl font-extrabold tracking-tight">Entrar</h1>
-        <p className="mt-1 text-white/70">Acesse com seu email e senha.</p>
+    <main className="min-h-screen flex items-center justify-center bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950 p-6">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl p-8">
+        <h1 className="text-4xl font-extrabold tracking-tight text-white">NEO HUB</h1>
+        <p className="mt-2 text-white/70">Acesse com seu email e senha.</p>
+
+        {errorMsg && (
+          <div className="mt-6 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-200">
+            {errorMsg}
+          </div>
+        )}
 
         <form action={loginAction} className="mt-6 space-y-4">
           <input type="hidden" name="next" value={next} />
 
-          <div className="space-y-2">
-            <label className="text-sm text-white/80">Email</label>
+          <div>
+            <label className="text-sm text-white/70">Email</label>
             <input
               name="email"
               type="email"
-              required
-              className="w-full rounded-xl bg-white text-black px-4 py-3 outline-none"
               placeholder="voce@exemplo.com"
+              required
+              className="mt-2 w-full rounded-xl bg-white/90 text-slate-900 placeholder-slate-500 px-4 py-3 outline-none ring-1 ring-transparent focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <div className="space-y-2">
-            <label className="text-sm text-white/80">Senha</label>
+          <div>
+            <label className="text-sm text-white/70">Senha</label>
             <input
               name="password"
               type="password"
+              placeholder="********"
               required
-              className="w-full rounded-xl bg-black/30 border border-white/10 px-4 py-3 outline-none"
-              placeholder=""
+              className="mt-2 w-full rounded-xl bg-white/10 text-white placeholder-white/30 px-4 py-3 outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
-          <button className="w-full rounded-xl bg-blue-600 py-3 font-semibold hover:bg-blue-700 transition">
+          <button
+            type="submit"
+            className="w-full rounded-xl bg-blue-600 hover:bg-blue-500 transition text-white font-semibold py-3"
+          >
             Entrar
           </button>
-
-          {error ? <p className="text-sm text-red-400">Erro: {error}</p> : null}
         </form>
 
         <div className="mt-6 flex items-center justify-between text-sm text-white/70">
           <span>Não tem conta?</span>
-          <Link className="text-white hover:underline" href="/cadastrar">Criar conta</Link>
+          <Link className="text-white hover:text-white/90 underline" href="/cadastrar">
+            Criar conta
+          </Link>
         </div>
       </div>
     </main>
