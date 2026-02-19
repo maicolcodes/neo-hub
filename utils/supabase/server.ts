@@ -1,49 +1,29 @@
-﻿import "server-only";
-
+﻿import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
 
-function getEnv(name: string) {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing env: ${name}`);
-  return v;
-}
+export async function createServerSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+  const anon = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-/**
- * Cliente Supabase para Server Components / Route Handlers (App Router)
- */
-export function createServerSupabase() {
-  const url = getEnv("NEXT_PUBLIC_SUPABASE_URL");
-  const anon = getEnv("NEXT_PUBLIC_SUPABASE_ANON_KEY");
-
-  const cookieStore = cookies() as any;
+  const cookieStore = await cookies();
 
   return createServerClient(url, anon, {
     cookies: {
       getAll() {
-        // Next pode variar a API de cookies entre versões
-        if (typeof cookieStore.getAll === "function") return cookieStore.getAll();
-        return [];
+        return cookieStore.getAll();
       },
       setAll(cookiesToSet) {
-        // Em Server Components, set pode falhar em algumas situações (ex: render)
-        // Mas para login/logout via Server Action geralmente funciona.
         try {
           cookiesToSet.forEach(({ name, value, options }) => {
-            if (typeof cookieStore.set === "function") cookieStore.set(name, value, options);
+            cookieStore.set(name, value, options);
           });
         } catch {
-          // ignore
+          // Em alguns contextos (ex: Server Components), o set pode falhar silenciosamente.
         }
       },
     },
   });
 }
 
-/**
- * Alias para compatibilidade com imports antigos:
- * import { createClient } from "@/utils/supabase/server"
- */
-export function createClient() {
-  return createServerSupabase();
-}
+// Alias para não quebrar imports antigos:
+export const createClient = createServerSupabase;
