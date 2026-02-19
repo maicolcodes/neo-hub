@@ -1,63 +1,67 @@
-﻿"use server";
+﻿'use server'
 
-import { redirect } from "next/navigation";
-import { createServerSupabase } from "@/utils/supabase/server";
-
-function safeNext(next: FormDataEntryValue | null) {
-  if (!next) return null;
-  const n = String(next);
-  // só aceitamos caminhos internos
-  if (!n.startsWith("/")) return null;
-  if (n.startsWith("//")) return null;
-  return n;
-}
+import { redirect } from 'next/navigation'
+import { createServerSupabase } from '@/utils/supabase/server'
 
 export async function loginAction(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  const email = String(formData.get('email') ?? '')
+  const password = String(formData.get('password') ?? '')
 
-  const next = safeNext(formData.get("next"));
-
-  if (!email || !password) {
-    redirect(`/login?error=${encodeURIComponent("Email e senha são obrigatórios")}${next ? `&next=${encodeURIComponent(next)}` : ""}`);
-  }
-
-  const supabase = await createServerSupabase();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const supabase = await createServerSupabase()
+  const { error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  })
 
   if (error) {
-    redirect(`/login?error=${encodeURIComponent("Email ou senha inválidos")}${next ? `&next=${encodeURIComponent(next)}` : ""}`);
+    redirect('/login?error=Email%20ou%20senha%20inválidos')
   }
 
-  redirect(next ?? "/pos-login");
+  redirect('/pos-login')
 }
 
 export async function signupAction(formData: FormData) {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
-  const role = String(formData.get("role") ?? "aluno");
+  const email = String(formData.get('email') ?? '')
+  const password = String(formData.get('password') ?? '')
 
-  if (!email || !password) {
-    redirect(`/cadastrar?error=${encodeURIComponent("Email e senha são obrigatórios")}`);
-  }
-
-  const supabase = await createServerSupabase();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  const supabase = await createServerSupabase()
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+  })
 
   if (error) {
-    redirect(`/cadastrar?error=${encodeURIComponent("Não foi possível criar a conta")}#${encodeURIComponent(error.message)}`);
+    redirect('/cadastrar?error=Erro%20ao%20criar%20conta')
   }
 
-  const userId = data.user?.id;
-  if (userId) {
-    await supabase.from("profiles").upsert({ id: userId, role }, { onConflict: "id" });
-  }
-
-  redirect("/login");
+  redirect('/login')
 }
 
 export async function signOutAction() {
-  const supabase = await createServerSupabase();
-  await supabase.auth.signOut();
-  redirect("/login");
+  const supabase = await createServerSupabase()
+  await supabase.auth.signOut()
+  redirect('/login')
+}
+
+export async function criarMissao(formData: FormData) {
+  const titulo = String(formData.get('titulo') ?? '').trim()
+
+  if (!titulo) {
+    redirect('/lancar-missao?error=Informe%20um%20título')
+  }
+
+  const supabase = await createServerSupabase()
+  const { data: auth } = await supabase.auth.getUser()
+
+  if (!auth?.user) {
+    redirect('/login')
+  }
+
+  await supabase.from('solicitacoes').insert({
+    titulo,
+    user_id: auth.user.id,
+    status: 'pendente',
+  })
+
+  redirect('/painel')
 }
