@@ -1,56 +1,70 @@
-﻿import { login } from "@/app/actions";
+﻿import Link from "next/link";
+import { loginAction } from "@/app/actions";
 
-export default async function EntrarPage({
+export const dynamic = "force-dynamic";
+
+export default function EntrarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams?: { error?: string; next?: string };
 }) {
-  const sp = await searchParams;
-  const error = sp?.error || "";
-  const next = sp?.next || "";
+  const error = searchParams?.error ? decodeURIComponent(searchParams.error) : "";
 
   return (
-    <main className="min-h-[70vh] grid place-items-center">
-      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 p-8 shadow-[0_20px_80px_rgba(0,0,0,0.35)]">
-        <h1 className="text-3xl font-extrabold tracking-tight">NEO HUB</h1>
-        <p className="mt-2 text-white/70">Entrar</p>
+    <main className="min-h-[100svh] w-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-black flex items-center justify-center p-6">
+      <div className="w-full max-w-md rounded-3xl border border-white/10 bg-white/5 backdrop-blur-xl shadow-2xl p-8">
+        <div className="mb-6">
+          <h1 className="text-4xl font-extrabold tracking-tight text-white">
+            NEO HUB
+          </h1>
+          <p className="mt-2 text-white/70">Entrar</p>
+        </div>
 
         {error ? (
-          <div className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200">
+          <div className="mb-5 rounded-2xl border border-rose-500/40 bg-rose-500/10 px-4 py-3 text-rose-100">
             {error}
           </div>
         ) : null}
 
-        <form action={login} className="mt-6 space-y-4">
-          <input type="hidden" name="next" value={next} />
+        <form action={loginAction} className="space-y-4">
+          <input type="hidden" name="next" value={searchParams?.next || ""} />
 
-          <input
-            name="email"
-            type="email"
-            required
-            placeholder="Email"
-            className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-white placeholder:text-white/40 outline-none"
-          />
+          <div>
+            <input
+              name="email"
+              type="email"
+              required
+              placeholder="seuemail@dominio.com"
+              className="w-full rounded-2xl bg-white/90 px-4 py-3 text-slate-900 outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-          <input
-            name="password"
-            type="password"
-            required
-            placeholder="Senha"
-            className="h-12 w-full rounded-xl border border-white/10 bg-black/30 px-4 text-white placeholder:text-white/40 outline-none"
-          />
+          <div>
+            <input
+              name="password"
+              type="password"
+              required
+              placeholder=""
+              className="w-full rounded-2xl bg-white/90 px-4 py-3 text-slate-900 outline-none ring-1 ring-white/10 focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-          <button className="h-12 w-full rounded-xl bg-blue-600 font-semibold hover:bg-blue-500 transition">
+          <button
+            type="submit"
+            className="w-full rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white hover:bg-blue-500 transition"
+          >
             Entrar
           </button>
         </form>
 
-        <a
-          href="/cadastrar"
-          className="mt-5 block text-center text-sm text-white/70 hover:text-white"
-        >
-          Criar conta
-        </a>
+        <div className="mt-6 text-center">
+          <Link
+            href="/cadastrar"
+            className="text-white/70 hover:text-white underline underline-offset-4"
+          >
+            Criar conta
+          </Link>
+        </div>
       </div>
     </main>
   );
