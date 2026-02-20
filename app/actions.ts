@@ -1,78 +1,77 @@
-﻿// app/actions.ts
-'use server';
+﻿'use server'
 
-import { redirect } from 'next/navigation';
-import { createServerSupabase } from '@/utils/supabase/server';
+import { redirect } from 'next/navigation'
+import { createClient } from '../utils/supabase/server'
 
-/**
- * PADRAO:
- * - loginAction
- * - signupAction
- * - signOutAction
- * - criarMissaoAction
- *
- * As paginas devem importar SEMPRE daqui:
- * import { loginAction } from '@/app/actions';
- */
+type FormData = { get(key: string): FormDataEntryValue | null }
 
 export async function loginAction(formData: FormData) {
-  const email = String(formData.get('email') ?? '').trim();
-  const password = String(formData.get('password') ?? '');
+  const email = String(formData.get('email') ?? '').trim()
+  const password = String(formData.get('password') ?? '')
 
-  if (!email || !password) redirect('/login?error=Email%20e%20senha%20obrigatorios');
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password })
 
-  const supabase = await createServerSupabase();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  if (error || !data?.user) redirect('/login?error=Email%20ou%20senha%20invalidos')
 
-  if (error) redirect('/login?error=Email%20ou%20senha%20invalidos');
-  redirect('/pos-login');
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('role')
+    .eq('id', data.user.id)
+    .single()
+
+  redirect(profile?.role === 'orientador' ? '/painel-orientador' : '/painel')
 }
 
-export async function signupAction(formData: FormData) {
-  const email = String(formData.get('email') ?? '').trim();
-  const password = String(formData.get('password') ?? '');
-  const role = String(formData.get('role') ?? 'aluno');
+export async function signUpAction(formData: FormData) {
+  const email = String(formData.get('email') ?? '').trim()
+  const password = String(formData.get('password') ?? '')
+  const role = String(formData.get('role') ?? 'aluno')
 
-  if (!email || !password) redirect('/cadastrar?error=Email%20e%20senha%20obrigatorios');
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.signUp({ email, password })
 
-  const supabase = await createServerSupabase();
-  const { data, error } = await supabase.auth.signUp({ email, password });
+  if (error) redirect('/cadastrar?error=Falha%20ao%20criar%20conta')
 
-  if (error) redirect('/cadastrar?error=Falha%20ao%20criar%20conta');
-
-  const userId = data.user?.id;
+  const userId = data.user?.id
   if (userId) {
-    // garante profile
-    await supabase.from('profiles').upsert({ id: userId, role }, { onConflict: 'id' });
+    await supabase.from('profiles').upsert({ id: userId, role }, { onConflict: 'id', ignoreDuplicates: true })
   }
 
-  redirect('/login');
+  redirect('/login')
 }
 
 export async function signOutAction() {
-  const supabase = await createServerSupabase();
-  await supabase.auth.signOut();
-  redirect('/login');
+  const supabase = await createClient()
+  await supabase.auth.signOut()
+  redirect('/login')
 }
 
 export async function criarMissaoAction(formData: FormData) {
-  const titulo = String(formData.get('titulo') ?? '').trim();
+  const titulo = String(formData.get('titulo') ?? '').trim()
+  const descricao = String(formData.get('descricao') ?? '').trim()
+  const categoria = String(formData.get('categoria') ?? '').trim()
+  const prazo = String(formData.get('prazo') ?? '').trim()
+  const orcamento = formData.get('orcamento')
 
-  if (!titulo) redirect('/lancar-missao?error=Informe%20um%20titulo');
+  if (!titulo) redirect('/lancar-missao?error=Informe%20um%20titulo')
 
-  const supabase = await createServerSupabase();
-  const { data: auth } = await supabase.auth.getUser();
-  const userId = auth?.user?.id;
+  const supabase = await createClient()
+  const { data: auth } = await supabase.auth.getUser()
+  const userId = auth?.user?.id
 
-  if (!userId) redirect('/login?error=Faça%20login%20novamente');
+  if (!userId) redirect('/login?error=Faça%20login%20novamente')
 
-  // Ajuste para sua tabela real (se for diferente, me fale o nome/colunas)
+  const { data: profile } = await supabase
+    .from('profiles').select('area').eq('id', userId).single()
+
   const { error } = await supabase.from('missoes').insert({
-    titulo,
-    criado_por: userId
-  });
+    titulo, descricao: descricao || null, categoria: categoria || null,
+    prazo: prazo || null, orcamento: orcamento ? Number(orcamento) : null,
+    aluno_id: userId, area: profile?.area || null, status: 'aberta'
+  })
 
-  if (error) redirect('/lancar-missao?error=Falha%20ao%20criar%20missao');
-
-  redirect('/painel');
+  if (error) redirect('/lancar-missao?error=Falha%20ao%20criar%20missao')
+  redirect('/painel?ok=1')
 }
+

@@ -1,54 +1,126 @@
-﻿export const dynamic = "force-dynamic";
-export const revalidate = 0;
+﻿'use client'
 
-import Link from "next/link";
-import { redirect } from "next/navigation";
-import { createServerSupabase } from "@/utils/supabase/server";
-import { criarMissaoAction } from '@/app/actions';
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { createBrowserClient } from '@supabase/ssr'
 
-export default async function LancarMissaoPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
-  const sp = await searchParams;
-  const error = sp?.error ?? "";
+const categorias = ['TCC', 'Monografia', 'Artigo Científico', 'Dissertação', 'Revisão ABNT', 'Outro']
 
-  const supabase = await createServerSupabase();
-  const { data } = await supabase.auth.getUser();
-  const user = data.user;
+export default function LancarMissao() {
+  const router = useRouter()
+  const [loading, setLoading] = useState(false)
+  const [erro, setErro] = useState('')
+  const [form, setForm] = useState({
+    titulo: '', descricao: '', categoria: '', prazo: '', orcamento: ''
+  })
 
-  if (!user) redirect("/login?next=/lancar-missao");
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  )
+
+  function handle(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    setErro('')
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) { router.push('/entrar'); return }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('area')
+      .eq('id', user.id)
+      .single()
+
+    const { error } = await supabase.from('missoes').insert({
+      aluno_id: user.id,
+      titulo: form.titulo,
+      descricao: form.descricao || null,
+      categoria: form.categoria || null,
+      prazo: form.prazo || null,
+      orcamento: form.orcamento ? Number(form.orcamento) : null,
+      area: profile?.area || null,
+      status: 'aberta'
+    })
+
+    if (error) { setErro('Erro ao criar missão. Tente novamente.'); setLoading(false); return }
+    router.push('/painel?ok=1')
+  }
 
   return (
-    <main className="min-h-screen neo-bg text-white p-6">
-      <div className="mx-auto max-w-4xl">
-        <header className="flex items-center justify-between">
+    <main className="min-h-screen bg-[#080c14] text-white p-6">
+      <div className="mx-auto max-w-xl">
+        <button onClick={() => router.back()} className="text-white/40 text-sm mb-8 hover:text-white transition">
+           Voltar
+        </button>
+
+        <h1 className="text-3xl font-extrabold mb-2">Lançar Missão</h1>
+        <p className="text-white/50 text-sm mb-8">Descreva o que você precisa e encontre o orientador ideal.</p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
           <div>
-            <h1 className="text-3xl font-extrabold">Lançar Missão</h1>
-            <p className="text-white/70">Crie uma solicitação para ser atendida por um orientador.</p>
+            <label className="text-sm text-white/60 mb-2 block">Título *</label>
+            <input
+              name="titulo" value={form.titulo} onChange={handle} required
+              placeholder="Ex: TCC sobre inteligência artificial"
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500 transition"
+            />
           </div>
 
-          <Link className="rounded-xl border border-white/15 bg-white/5 px-4 py-2 hover:bg-white/10 transition" href="/painel">
-            Voltar
-          </Link>
-        </header>
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">Categoria *</label>
+            <select
+              name="categoria" value={form.categoria} onChange={handle} required
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition"
+            >
+              <option value="" disabled>Selecione uma categoria</option>
+              {categorias.map(c => <option key={c} value={c} className="bg-[#0d1420]">{c}</option>)}
+            </select>
+          </div>
 
-        <div className="mt-10 rounded-2xl border border-white/10 bg-white/5 p-6">
-          <form action={criarMissaoAction} className="flex flex-col gap-4 sm:flex-row sm:items-center">
-            <input
-              name="titulo"
-              className="flex-1 rounded-xl bg-black/30 border border-white/10 px-4 py-3 outline-none"
-              placeholder="Título da solicitação"
-              required
+          <div>
+            <label className="text-sm text-white/60 mb-2 block">Descrição *</label>
+            <textarea
+              name="descricao" value={form.descricao} onChange={handle} required
+              placeholder="Descreva em detalhes o que você precisa..."
+              rows={4}
+              className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500 transition resize-none"
             />
-            <button className="rounded-xl bg-blue-600 px-8 py-3 font-semibold hover:bg-blue-700 transition">
-              Enviar
-            </button>
-          </form>
+          </div>
 
-          {error ? (
-            <p className="mt-4 text-sm text-red-400">Erro: {error}</p>
-          ) : null}
-        </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">Prazo</label>
+              <input
+                type="date" name="prazo" value={form.prazo} onChange={handle}
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-blue-500 transition"
+              />
+            </div>
+            <div>
+              <label className="text-sm text-white/60 mb-2 block">Orçamento (R$)</label>
+              <input
+                type="number" name="orcamento" value={form.orcamento} onChange={handle}
+                placeholder="0,00"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm text-white placeholder-white/30 focus:outline-none focus:border-blue-500 transition"
+              />
+            </div>
+          </div>
+
+          {erro && <p className="text-red-400 text-sm">{erro}</p>}
+
+          <button
+            type="submit" disabled={loading}
+            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-500 transition text-white font-semibold text-sm disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Enviando...' : 'Lançar Missão'}
+          </button>
+        </form>
       </div>
     </main>
-  );
+  )
 }
-
