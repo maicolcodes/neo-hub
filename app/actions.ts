@@ -24,18 +24,26 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function signUpAction(formData: FormData) {
+  const nome = String(formData.get("nome") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const role = String(formData.get("role") ?? "aluno");
 
+  if (!nome) redirect("/cadastro?error=Informe%20seu%20nome");
+  if (!email) redirect("/cadastro?error=Informe%20seu%20email");
+  if (!password || password.length < 6) redirect("/cadastro?error=Senha%20muito%20curta");
+
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({ email, password });
 
-  if (error) redirect("/cadastrar?error=Falha%20ao%20criar%20conta");
+  if (error) redirect("/cadastro?error=Falha%20ao%20criar%20conta");
 
   const userId = data.user?.id;
   if (userId) {
-    await supabase.from("profiles").upsert({ id: userId, role }, { onConflict: "id", ignoreDuplicates: true });
+    await supabase.from("profiles").upsert(
+      { id: userId, nome, role },
+      { onConflict: "id", ignoreDuplicates: true }
+    );
   }
 
   redirect("/login");
