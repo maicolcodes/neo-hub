@@ -4,5 +4,7 @@
 _fora_do_app_desativado/
 .claude/
 .next/
-
 node_modules/
+.env.local
+.vercel/
+tsconfig.tsbuildinfo
