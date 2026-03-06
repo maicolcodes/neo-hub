@@ -13,15 +13,7 @@ const areas = [
   { id: "tecnologia", label: "Tecnologia", emoji: "", desc: "TI, Programação, Sistemas, IA..." },
 ];
 
-export default async function PainelOrientador({
-  searchParams,
-}: {
-  searchParams: Promise<{ ok?: string; error?: string }>;
-}) {
-  const sp = await searchParams;
-  const ok = sp?.ok;
-  const error = sp?.error;
-
+export default async function PainelOrientador() {
   const supabase = await createServerSupabase();
   const { data } = await supabase.auth.getUser();
   const user = data.user;
@@ -55,18 +47,6 @@ export default async function PainelOrientador({
             </button>
           </form>
         </header>
-
-        {ok ? (
-          <div className="mb-6 rounded-2xl border border-green-500/30 bg-green-500/10 px-4 py-3 text-green-200">
-            Missão aceita com sucesso.
-          </div>
-        ) : null}
-
-        {error ? (
-          <div className="mb-6 rounded-2xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-red-200">
-            {decodeURIComponent(error)}
-          </div>
-        ) : null}
 
         <div className="mb-10">
           <h2 className="text-xl font-bold mb-1">Minha Área de Atuação</h2>

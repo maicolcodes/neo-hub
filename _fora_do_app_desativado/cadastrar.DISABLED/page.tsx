@@ -2,7 +2,7 @@
 export const revalidate = 0;
 
 import Link from "next/link";
-import { signupAction } from "@/app/actions";
+import { signUpAction } from "@/app/actions";
 
 export default async function CadastrarPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const sp = await searchParams;
@@ -14,7 +14,7 @@ export default async function CadastrarPage({ searchParams }: { searchParams: Pr
         <h1 className="text-3xl font-extrabold tracking-tight">Criar conta</h1>
         <p className="mt-1 text-white/70">Escolha seu papel e finalize.</p>
 
-        <form action={signupAction} className="mt-6 space-y-4">
+        <form action={signUpAction} className="mt-6 space-y-4">
           <div className="space-y-2">
             <label className="text-sm text-white/80">Email</label>
             <input
@@ -60,3 +60,4 @@ export default async function CadastrarPage({ searchParams }: { searchParams: Pr
     </main>
   );
 }
+

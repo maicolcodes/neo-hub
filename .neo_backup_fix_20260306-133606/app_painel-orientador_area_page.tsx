@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 
-function SalvarAreaContent() {
+export default function SelecionarAreaOrientador() {
   const router = useRouter();
   const params = useSearchParams();
   const area = params.get("id");
@@ -21,21 +21,16 @@ function SalvarAreaContent() {
       } = await supabase.auth.getUser();
 
       if (!user || !area) {
-        router.push("/painel");
+        router.push("/painel-orientador");
         return;
       }
 
-      const { error } = await supabase
+      await supabase
         .from("profiles")
         .update({ area })
         .eq("id", user.id);
 
-      if (error) {
-        router.push("/painel");
-        return;
-      }
-
-      router.push("/painel");
+      router.push("/painel-orientador");
     }
 
     salvar();
@@ -47,21 +42,5 @@ function SalvarAreaContent() {
         <p className="text-white/50 text-sm">Salvando sua área...</p>
       </div>
     </main>
-  );
-}
-
-export default function SelecionarAreaPage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="min-h-screen bg-[#080c14] flex items-center justify-center text-white">
-          <div className="text-center">
-            <p className="text-white/50 text-sm">Carregando...</p>
-          </div>
-        </main>
-      }
-    >
-      <SalvarAreaContent />
-    </Suspense>
   );
 }
