@@ -1,4 +1,4 @@
-﻿import { createServerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
@@ -32,6 +32,8 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/painel") ||
     path.startsWith("/painel-orientador") ||
     path.startsWith("/lancar-missao") ||
+    path.startsWith("/missao") ||
+    path.startsWith("/perfil") ||
     path.startsWith("/pos-login");
 
   if (!user) {
@@ -74,5 +76,12 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/painel/:path*", "/painel-orientador/:path*", "/lancar-missao/:path*", "/pos-login"],
+  matcher: [
+    "/painel/:path*",
+    "/painel-orientador/:path*",
+    "/lancar-missao/:path*",
+    "/missao/:path*",
+    "/perfil/:path*",
+    "/pos-login",
+  ],
 };

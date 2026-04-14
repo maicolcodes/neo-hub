@@ -24,14 +24,10 @@ export async function loginAction(formData: FormData) {
 }
 
 export async function signUpAction(formData: FormData) {
-  const nome = String(formData.get("nome") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
   const role = String(formData.get("role") ?? "aluno");
-
-  if (!nome) redirect("/cadastro?error=Informe%20seu%20nome");
-  if (!email) redirect("/cadastro?error=Informe%20seu%20email");
-  if (!password || password.length < 6) redirect("/cadastro?error=Senha%20muito%20curta");
+  const nome = String(formData.get("nome") ?? "").trim();
 
   const supabase = await createClient();
   const { data, error } = await supabase.auth.signUp({ email, password });
@@ -41,8 +37,8 @@ export async function signUpAction(formData: FormData) {
   const userId = data.user?.id;
   if (userId) {
     await supabase.from("profiles").upsert(
-      { id: userId, nome, role },
-      { onConflict: "id", ignoreDuplicates: true }
+      { id: userId, role, nome: nome || null },
+      { onConflict: "id", ignoreDuplicates: false }
     );
   }
 
@@ -144,4 +140,90 @@ export async function aceitarMissaoAction(formData: FormData) {
   }
 
   redirect("/painel-orientador?ok=1");
+}
+
+export async function marcarMissaoEntregueAction(formData: FormData) {
+  const missaoId = String(formData.get("missao_id") ?? "").trim();
+
+  if (!missaoId) redirect("/painel-orientador?error=Missao%20invalida");
+
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth?.user?.id;
+
+  if (!userId) redirect("/login?error=Faça%20login%20novamente");
+
+  const { data: missao } = await supabase
+    .from("missoes")
+    .select("id, status, orientador_id")
+    .eq("id", missaoId)
+    .single();
+
+  if (!missao) {
+    redirect("/painel-orientador?error=Missao%20nao%20encontrada");
+  }
+
+  if (missao.orientador_id !== userId) {
+    redirect("/painel-orientador?error=Acesso%20negado");
+  }
+
+  if (missao.status !== "em_andamento") {
+    redirect(`/missao/${missaoId}?error=Status%20invalido`);
+  }
+
+  const { error } = await supabase
+    .from("missoes")
+    .update({ status: "entregue" })
+    .eq("id", missaoId)
+    .eq("orientador_id", userId)
+    .eq("status", "em_andamento");
+
+  if (error) {
+    redirect(`/missao/${missaoId}?error=Falha%20ao%20marcar%20como%20entregue`);
+  }
+
+  redirect(`/missao/${missaoId}?ok=entregue`);
+}
+
+export async function concluirMissaoAction(formData: FormData) {
+  const missaoId = String(formData.get("missao_id") ?? "").trim();
+
+  if (!missaoId) redirect("/painel-orientador?error=Missao%20invalida");
+
+  const supabase = await createClient();
+  const { data: auth } = await supabase.auth.getUser();
+  const userId = auth?.user?.id;
+
+  if (!userId) redirect("/login?error=Faça%20login%20novamente");
+
+  const { data: missao } = await supabase
+    .from("missoes")
+    .select("id, status, orientador_id")
+    .eq("id", missaoId)
+    .single();
+
+  if (!missao) {
+    redirect("/painel-orientador?error=Missao%20nao%20encontrada");
+  }
+
+  if (missao.orientador_id !== userId) {
+    redirect("/painel-orientador?error=Acesso%20negado");
+  }
+
+  if (missao.status !== "entregue") {
+    redirect(`/missao/${missaoId}?error=Status%20invalido%20para%20conclusao`);
+  }
+
+  const { error } = await supabase
+    .from("missoes")
+    .update({ status: "concluida" })
+    .eq("id", missaoId)
+    .eq("orientador_id", userId)
+    .eq("status", "entregue");
+
+  if (error) {
+    redirect(`/missao/${missaoId}?error=Falha%20ao%20concluir%20missao`);
+  }
+
+  redirect(`/missao/${missaoId}?ok=concluida`);
 }
