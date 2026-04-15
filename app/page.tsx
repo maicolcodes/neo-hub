@@ -410,7 +410,10 @@ export default function HomePage() {
           <div className="neo-divider mb-6" />
           <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-white/30 text-sm">
             <span>© 2026 NEO HUB. Todos os direitos reservados.</span>
-            <span>A evolução é orientada.</span>
+            <span className="flex items-center gap-1.5">
+              from{" "}
+              <span className="text-white/50 font-semibold tracking-wide">MyCode&apos;s</span>
+            </span>
           </div>
         </div>
       </footer>
